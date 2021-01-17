@@ -13,7 +13,7 @@ public class Node {
     public Node(Tree tree) {
         this.tree = tree;
         numberInDictionary = 0;
-        parentNumber = 0;
+        parentNumber = -1;
         children = new HashMap<>();
     }
 
@@ -30,43 +30,29 @@ public class Node {
         this.parentNumber = parentNumber;
     }
 
-//    @Override
-//    public String toString() {
-//        return "Node{" +
-//                "numberInDictionary=" + numberInDictionary +
-//                ", character=" + character +
-//                ", parentNumber=" + parentNumber +
-//                ", children=" + children +
-//                '}';
-//    }
-//
-
     public Pair getCode(byte[] bytes, int startPosition, int currentPosition, boolean fileEnded) {
         Node child = children.get(bytes[currentPosition]);
-        if (child != null) {
-            if (currentPosition + 1 == bytes.length) {
-                if (fileEnded) {
-                    return new Pair(currentPosition, child);
-                } else {
-                    return new Pair(startPosition);
-                }
+        if (child == null) {
+            if (tree.isDictionaryFull()) {
+                return new Pair(currentPosition + 1,
+                        new Node(bytes[currentPosition], this.numberInDictionary));
+            } else {
+                tree.updateCurrentDictionarySize();
+                children.put(bytes[currentPosition],
+                        new Node(tree, tree.getCurrentDictionarySize(), bytes[currentPosition], this.numberInDictionary));
+                return new Pair(currentPosition + 1,
+                        new Node(bytes[currentPosition], this.numberInDictionary));
             }
-            return child.getCode(bytes, startPosition, currentPosition + 1, fileEnded);
-        }
-        if (tree.getCurrentDictionarySize() == tree.getDictionarySize()) {
-            return new Pair(currentPosition, new Node(bytes[currentPosition], numberInDictionary));
-        }
-        if (currentPosition + 1 == bytes.length) {
-            if (!fileEnded) {
+        } else {
+            if (fileEnded && currentPosition + 1 == bytes.length) {
+                return new Pair(currentPosition + 1,
+                        new Node(bytes[currentPosition], this.numberInDictionary));
+            } else if (!fileEnded && currentPosition + 1 == bytes.length) {
                 return new Pair(startPosition, null);
             } else {
-                return new Pair(currentPosition, this);
+                return child.getCode(bytes, startPosition, currentPosition + 1, fileEnded);
             }
         }
-        children.put(bytes[currentPosition], new Node(tree, tree.getCurrentDictionarySize(),
-                bytes[currentPosition], numberInDictionary));
-        tree.updateCurrentDictionarySize();
-        return new Pair(currentPosition, children.get(bytes[currentPosition]));
     }
 
     public byte getCharacter() {

@@ -19,15 +19,16 @@ public class Tree {
         return currentDictionarySize;
     }
 
-    public int getDictionarySize() {
-        return dictionarySize;
-    }
-
     public void updateCurrentDictionarySize() {
         currentDictionarySize++;
+    }
+
+    public boolean isDictionaryFull() {
+        return currentDictionarySize == dictionarySize;
     }
 
     public Pair getCoded(byte[] bytes, int currentByte, boolean fileEnded) {
         return tree.getCode(bytes, currentByte, currentByte, fileEnded);
     }
+
 }

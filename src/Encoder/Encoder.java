@@ -9,42 +9,46 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class Encoder {
-    private Tree dictionary;
     private Utils utils;
     private String currentText;
+    private Tree dictionary;
 
     public Encoder(String filename, int dictionarySize) throws FileNotFoundException {
         this.dictionary = new Tree(dictionarySize);
         this.utils = new Utils(filename, "en_" + filename);
-        currentText = utils.convertFromDecimalToBinary(dictionarySize, 4);
+        this.currentText = utils.convertFromDecimalToBinary(dictionarySize, 4);
     }
 
     public void encode() throws IOException {
         byte[] leftovers = new byte[0];
         while (!utils.getInputFileEnded()) {
             byte[] newBytes = utils.loadBytes();
-            byte[] currentBytes = new byte[leftovers.length + newBytes.length];
+            byte[] currentBytes = new byte[newBytes.length + leftovers.length];
             System.arraycopy(leftovers, 0, currentBytes, 0, leftovers.length);
             System.arraycopy(newBytes, 0, currentBytes, leftovers.length, newBytes.length);
+            boolean newLoadNeeded = false;
             int startPosition = 0;
-            while (startPosition < currentBytes.length) {
-                Pair newReceived = dictionary.getCoded(currentBytes, startPosition, utils.getInputFileEnded());
-                startPosition = newReceived.getLastVisitedPosition();
-                Node receivedNode = newReceived.getNode();
+            while (!newLoadNeeded) {
+                Pair code = dictionary.getCoded(currentBytes, startPosition, utils.getInputFileEnded());
+                Node receivedNode = code.getNode();
+                startPosition = code.getNewPosition();
                 if (receivedNode == null) {
+                    newLoadNeeded = true;
                     leftovers = new byte[currentBytes.length - startPosition];
-                    System.arraycopy(currentBytes, startPosition, leftovers, 0, currentBytes.length - startPosition);
-                    currentText = utils.writeBytes(currentText);
-                    break;
+                    System.arraycopy(currentBytes, startPosition, leftovers, 0,
+                            currentBytes.length - startPosition);
+                } else {
+                    if (startPosition == currentBytes.length) {
+                        newLoadNeeded = true;
+                        leftovers = new byte[0];
+                    }
+                    int positionsForNumberInDictionary = countPositions();
+                    currentText += utils.convertFromDecimalToBinary(receivedNode.getParentNumber(),
+                            positionsForNumberInDictionary)
+                            + utils.convertFromDecimalToBinary(receivedNode.getCharacter());
                 }
-                startPosition++;
-                int position = receivedNode.getParentNumber();
-                byte character = receivedNode.getCharacter();
-                int positions = countPositions();
-                currentText += (utils.convertFromDecimalToBinary(position, positions) +
-                        utils.convertFromDecimalToBinary(character, 8));
             }
-
+            currentText = utils.writeBytes(currentText);
         }
         while (currentText.length() % 8 != 0) {
             currentText += "0";
@@ -53,13 +57,13 @@ public class Encoder {
     }
 
     private int countPositions() {
-        int length = 0;
+        int dictionarySize = dictionary.getCurrentDictionarySize();
         for (int i = -1; i < 16; i++) {
-            if (dictionary.getCurrentDictionarySize() > Math.pow(2, i) &&
-                    dictionary.getCurrentDictionarySize() <= Math.pow(2, i + 1)) {
-                length = Integer.toBinaryString((int) Math.pow(2, i + 1)).length();
+            if (dictionarySize >= Math.pow(2, i) && dictionarySize < Math.pow(2, i + 1)) {
+                return Integer.toString((int) Math.pow(2, i), 2).length();
             }
         }
-        return length;
+        return -1;
     }
+
 }

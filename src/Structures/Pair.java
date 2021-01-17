@@ -1,21 +1,21 @@
 package Structures;
 
 public class Pair {
-    private int lastVisitedPosition;
+    private int newPosition;
     private Node node;
 
-    public Pair(int lastVisitedPosition) {
-        this.lastVisitedPosition = lastVisitedPosition;
+    public Pair(int newPosition) {
+        this.newPosition = newPosition;
         this.node = null;
     }
 
-    public Pair(int lastVisitedPosition, Node node) {
-        this.lastVisitedPosition = lastVisitedPosition;
+    public Pair(int newPosition, Node node) {
+        this.newPosition = newPosition;
         this.node = node;
     }
 
-    public int getLastVisitedPosition() {
-        return lastVisitedPosition;
+    public int getNewPosition() {
+        return newPosition;
     }
 
     public Node getNode() {
